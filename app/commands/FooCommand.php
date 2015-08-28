@@ -55,10 +55,19 @@ class FooCommand extends Command {
 				'username' => 'no-reply@putao.com',
 				'password' => 'putao@12345',
 			];
-			Mail::send('emails.msg', array('data' => $data['data']), function($message) use($data)
+			try{
+				Mail::send('emails.msg', array('data' => $data['data']), function($message) use($data)
+				{
+				    $message->to($data['to'], $data['to'])->subject($data['subject']);
+				});
+			}
+			catch(Exception $error)
 			{
-			    $message->to($data['to'], $data['to'])->subject($data['subject']);
-			});
+				Log::error("Send Mail release:: job id:" .  $job->getId() . ' is error ' . $error->getMessage());
+				$pheanstalk->release($job, 10, 10);
+				continue;
+			}
+
 			Log::info("Send Mail release:: job id:" .  $job->getId());
 			$pheanstalk->delete($job);
 		}
